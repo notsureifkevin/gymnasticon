@@ -19,7 +19,7 @@
   "author": "<ptx2@ptx2.net>",
   "license": "MIT",
   "dependencies": {
-    "@abandonware/bleno": "^0.5.1-2",
+    "@abandonware/bleno": "ptx2/bleno#b7acf8b72f19056e81f838ab611005b21f997777",
     "@abandonware/noble": "^1.9.2-8",
     "yargs": "^15.3.1"
   },
