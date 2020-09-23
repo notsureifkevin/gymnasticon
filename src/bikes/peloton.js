@@ -5,7 +5,7 @@ import util from 'util';
 const SerialPort = require('serialport')
 const Delimiter = require('@serialport/parser-delimiter')
 
-const PACKET_DELIMITER = new Buffer('f6', 'hex');
+const PACKET_DELIMITER = Buffer.from('f6', 'hex');
 
 const debuglog = util.debuglog('peloton');
 

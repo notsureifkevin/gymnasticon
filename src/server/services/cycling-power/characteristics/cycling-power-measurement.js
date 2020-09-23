@@ -11,16 +11,7 @@ export class CyclingPowerMeasurementCharacteristic extends Characteristic {
     super({
       uuid: '2a63',
       properties: ['notify'],
-      descriptors: [
-        new Descriptor({
-          uuid: '2902',
-          value: Buffer.alloc(2)
-        }),
-        new Descriptor({
-          uuid: '2903',
-          value: Buffer.alloc(2)
-        })
-      ]
+      descriptors: []
     })
   }
 
@@ -45,6 +36,15 @@ export class CyclingPowerMeasurementCharacteristic extends Characteristic {
       value.writeUInt16LE(revolutions16bit, 4);
       value.writeUInt16LE(timestamp16bit, 6);
       flags |= FLAG_HASCRANKDATA;
+      this.lastcrank = crank;
+    } else {
+      if (this.lastcrank) {
+        const revolutions16bit = this.lastcrank.revolutions & 0xffff;
+        const timestamp16bit = Math.floor(this.lastcrank.timestamp * CRANK_TIMESTAMP_SCALE) & 0xffff;
+        value.writeUInt16LE(revolutions16bit, 4);
+        value.writeUInt16LE(timestamp16bit, 6);
+        flags |= FLAG_HASCRANKDATA;
+      }
     }
 
     value.writeUInt16LE(flags, 0);

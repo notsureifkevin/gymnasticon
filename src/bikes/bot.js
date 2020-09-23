@@ -1,4 +1,3 @@
-import dgram from 'dgram';
 import {once, EventEmitter} from 'events';
 import {Timer} from '../util/timer';
 
@@ -19,8 +18,7 @@ export class BotBikeClient extends EventEmitter {
     super();
 
     this.onStatsUpdate = this.onStatsUpdate.bind(this);
-    this.onUdpError = this.onUdpError.bind(this);
-    this.onUdpMessage = this.onUdpMessage.bind(this);
+    this.getStatsUpdate = this.getStatsUpdate.bind(this);
 
     this.power = power;
     this.cadence = cadence;
@@ -29,18 +27,12 @@ export class BotBikeClient extends EventEmitter {
 
     this._address = '00:00:00:00:00:00';
 
-    this._timer = new Timer(1);
-    this._timer.on('timeout', this.onStatsUpdate);
-
-    this._udpServer = dgram.createSocket('udp4');
-    this._udpServer.on('message', this.onUdpMessage);
-    this._udpServer.on('error', this.onUdpError);
+    this._timer = new Timer(0.2);
+    this._timer.on('timeout', this.getStatsUpdate);
   }
 
   async connect() {
-    this._udpServer.bind(this._port, this._host);
     this._timer.reset();
-    await once(this._udpServer, 'listening');
   }
 
   get address() {
@@ -55,30 +47,35 @@ export class BotBikeClient extends EventEmitter {
     this.emit('stats', {power, cadence});
   }
 
-  /**
-   * @private
-   */
-  onUdpMessage(msg, rinfo) {
-    let j
-    try {
-      j = JSON.parse(msg);
-    } catch (e) {
-      console.error(e);
-    }
-    console.log(j);
-    const {power, cadence} = j;
-    if (Number.isInteger(power) && power >= 0) {
-      this.power = power;
-    }
-    if (Number.isInteger(cadence) && cadence >= 0) {
-      this.cadence = cadence;
-    }
-  }
+  getStatsUpdate() {
+    var http = require('http');
 
-  /**
-   * @private
-   */
-  onUdpError(err) {
-    this.emit('disconnect', {address: this._address})
+    let url = "http://"+ this._host +":"+ this._port +"/metrics";
+    let options = {json: true};
+      
+    http.get(url,(res) => {
+      let body = "";
+
+      res.on("data", (chunk) => {
+        body += chunk;
+      });
+
+      res.on("end", () => {
+        try {
+          let json = JSON.parse(body);
+
+          this.power = json.power;
+          this.cadence = json.cadence;
+          // do something with JSON
+          this.onStatsUpdate()
+
+        } catch (error) {
+          console.error(error.message);
+        };
+      });
+
+    }).on("error", (error) => {
+      console.error(error.message);
+    });
   }
 }
